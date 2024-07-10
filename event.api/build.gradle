@@ -38,6 +38,9 @@ dependencies {
 	// 쿼리파라미터 추가 외부로그 남기기
 	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.5.8'
 
+	// 이메일 전송 라이브러리
+	implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 	//querydsl 추가
 	implementation "com.querydsl:querydsl-jpa:${queryDslVersion}"
 	annotationProcessor "com.querydsl:querydsl-apt:${queryDslVersion}"
