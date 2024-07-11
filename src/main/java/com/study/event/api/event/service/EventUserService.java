@@ -23,6 +23,7 @@ public class EventUserService {
     private String mailhost;
 
     private final EventUserRepository eventUserRepository;
+    private final EmailVerificationRepository emailVerificationRepository;
 
     // 이메일 전송 객체
     private final JavaMailSender mailSender;
@@ -32,11 +33,39 @@ public class EventUserService {
     public boolean checkEmailDuplicate(String email) {
         boolean exists = eventUserRepository.existsByEmail(email);
         log.info("Checking email {} is duplicate : {} ", email, exists);
+
+        // 중복이 아니면 선제적으로 회원가입을 시킴
+        // 일련의 후속 처리(데이터베이스 처리, 이메일 보내는 것, ...)
+        if(!exists)  processSignUp(email);
+
         return exists;
     }
 
+    public void processSignUp() {
+
+        // 1. 임시 회원가입
+        EventUser newEventUser = EventUser
+                .builder()
+                .email(email)
+                .build();
+
+        EventUser savedUser = eventUserRepository.save(newEventUser);
+
+        // 2. 이메일 인증코드 발송
+        String code = sendVerificationEmail(email);
+
+        // 3. 인증코드 정보를 데이터베이스에 저장
+        EmailVerificaiton verificaiton = EmailVerificaiton.builder()
+                .verificationCode() // 인증코드
+                .expiryDate(LocalDateTime.now().plusMinutes(5)) // 만료시간 (5분 뒤)
+                .eventUser(savedUser) // FK
+                .build();
+
+        emailVerificationRepository.save(verificaiton);
+    }
+
     // 이메일 인증 코드 보내기
-    public void sendVerificationEmail(String email) {
+    public String sendVerificationEmail(String email) {
 
         // 검증 코드 생성하기
         String code = generateVerificationCode();
@@ -63,6 +92,8 @@ public class EventUserService {
             mailSender.send(mimeMessage);
 
             log.info("{} 님에게 이메일 전송!", email);
+
+            return code;
 
         } catch (Exception e) {
             throw new RuntimeException(e);
