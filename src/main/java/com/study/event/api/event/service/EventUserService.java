@@ -1,7 +1,8 @@
 package com.study.event.api.event.service;
 
+import com.study.event.api.event.entity.EmailVerification;
 import com.study.event.api.event.entity.EventUser;
-import com.study.event.api.event.repository.EventRepository;
+import com.study.event.api.event.repository.EmailVerificationRepository;
 import com.study.event.api.event.repository.EventUserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +13,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.internet.MimeMessage;
+import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -20,7 +23,7 @@ import javax.mail.internet.MimeMessage;
 public class EventUserService {
 
     @Value("${study.mail.host}")
-    private String mailhost;
+    private String mailHost;
 
     private final EventUserRepository eventUserRepository;
     private final EmailVerificationRepository emailVerificationRepository;
@@ -28,20 +31,19 @@ public class EventUserService {
     // 이메일 전송 객체
     private final JavaMailSender mailSender;
 
-
     // 이메일 중복확인 처리
     public boolean checkEmailDuplicate(String email) {
-        boolean exists = eventUserRepository.existsByEmail(email);
-        log.info("Checking email {} is duplicate : {} ", email, exists);
 
-        // 중복이 아니면 선제적으로 회원가입을 시킴
-        // 일련의 후속 처리(데이터베이스 처리, 이메일 보내는 것, ...)
-        if(!exists)  processSignUp(email);
+        boolean exists = eventUserRepository.existsByEmail(email);
+        log.info("Checking email {} is duplicate : {}", email, exists);
+
+        // 일련의 후속 처리 (데이터베이스 처리, 이메일 보내는 것...)
+        if (!exists) processSignUp(email);
 
         return exists;
     }
 
-    public void processSignUp() {
+    public void processSignUp(String email) {
 
         // 1. 임시 회원가입
         EventUser newEventUser = EventUser
@@ -51,17 +53,18 @@ public class EventUserService {
 
         EventUser savedUser = eventUserRepository.save(newEventUser);
 
-        // 2. 이메일 인증코드 발송
+        // 2. 이메일 인증 코드 발송
         String code = sendVerificationEmail(email);
 
-        // 3. 인증코드 정보를 데이터베이스에 저장
-        EmailVerificaiton verificaiton = EmailVerificaiton.builder()
-                .verificationCode() // 인증코드
-                .expiryDate(LocalDateTime.now().plusMinutes(5)) // 만료시간 (5분 뒤)
+        // 3. 인증 코드 정보를 데이터베이스에 저장
+        EmailVerification verification = EmailVerification.builder()
+                .verificationCode(code) // 인증 코드
+                .expiryDate(LocalDateTime.now().plusMinutes(5)) // 만료 시간 (5분 뒤)
                 .eventUser(savedUser) // FK
                 .build();
 
-        emailVerificationRepository.save(verificaiton);
+        emailVerificationRepository.save(verification);
+
     }
 
     // 이메일 인증 코드 보내기
@@ -74,7 +77,7 @@ public class EventUserService {
         MimeMessage mimeMessage = mailSender.createMimeMessage();
 
         try {
-            MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, false, "utf-8");
+            MimeMessageHelper messageHelper = new MimeMessageHelper(mimeMessage, false, "UTF-8");
 
             // 누구에게 이메일을 보낼 것인지
             messageHelper.setTo(email);
@@ -83,10 +86,11 @@ public class EventUserService {
             // 이메일 내용 설정
             messageHelper.setText(
                     "인증 코드: <b style=\"font-weight: 700; letter-spacing: 5px; font-size: 30px;\">" + code + "</b>"
-                    , true);
+                    , true
+            );
 
             // 전송자의 이메일 주소
-            messageHelper.setFrom(mailhost);
+            messageHelper.setFrom(mailHost);
 
             // 이메일 보내기
             mailSender.send(mimeMessage);
@@ -105,4 +109,26 @@ public class EventUserService {
         return String.valueOf((int) (Math.random() * 9000 + 1000));
     }
 
+    // 인증코드 체크
+    public boolean isMatch(String email, String code) {
+
+        // 이메일을 통해 회원정보를 탐색
+        EventUser eventUser = eventUserRepository.findByEmail(email).orElse(null);
+
+        if (eventUser != null) {
+            // 인증코드가 있는지 탐색
+            EmailVerification ev = emailVerificationRepository.findByEventUser(eventUser).orElse(null);
+
+            // 인증코드가 있고 만료시간이 지나지 않았고 코드 번호가 일치할 경우
+            if (ev != null && ev.getExpiryDate().isAfter(LocalDateTime.now())
+                    && code.equals(ev.getVerificationCode())) {
+                return true;
+            }
+
+
+        }
+
+
+        return false;
+    }
 }
