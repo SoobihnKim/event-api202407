@@ -7,7 +7,6 @@ import java.util.Optional;
 
 public interface EventUserRepository extends JpaRepository<EventUser, String> {
 
-
     // query method로 Jpql 생성
     boolean existsByEmail(String email); // 이름 필드명과 일치해야함(email)
 
