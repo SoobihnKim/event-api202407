@@ -168,7 +168,5 @@ public class EventUserService {
         foundUser.confirm(encodedPassword);
         eventUserRepository.save(foundUser);
 
-
-
     }
 }
