@@ -36,16 +36,31 @@ public class EventUserService {
     // 패스워드 암호화 객체
     private final PasswordEncoder encoder;
 
+
     // 이메일 중복확인 처리
     public boolean checkEmailDuplicate(String email) {
 
-        boolean exists = eventUserRepository.existsByEmail(email);
-        log.info("Checking email {} is duplicate : {}", email, exists);
+//        boolean exists = eventUserRepository.existsByEmail(email);
+//        log.info("Checking email {} is duplicate : {}", email, exists);
+
+        Optional<EventUser> existingUserOpt = eventUserRepository.findByEmail(email);
+        if (existingUserOpt.isPresent()) {
+            EventUser existingUser = existingUserOpt.get();
+            if(existingUser.getPassword() == null) { // 비밀번호 설정하지 않은 경우
+                generateAndSendCode(email, existingUser);
+                return false; // 중복으로 처리하지 않음
+            } else {
+                return true;
+            }
+        } else {
+            processSignUp(email);
+            return false;
+        }
 
         // 일련의 후속 처리 (데이터베이스 처리, 이메일 보내는 것...)
-        if (!exists) processSignUp(email);
-
-        return exists;
+//        if (!exists) processSignUp(email);
+//
+//        return exists;
     }
 
     public void processSignUp(String email) {
@@ -139,6 +154,7 @@ public class EventUserService {
                 // 인증코드 데이터베이스에서 삭제
                 emailVerificationRepository.delete(ev);
                 return true;
+
             } else { // 인증코드가 틀렸거나 만료된 경우
                 // 인증코드 재발송
                 // 원래 인증코드 삭제
@@ -148,11 +164,11 @@ public class EventUserService {
                 // 데이터베이스에 새 인증코드 저장
                 generateAndSendCode(email, eventUser);
                 return false;
-
             }
         }
         return false;
     }
+
 
     // 회원가입 마무리
     public void confirmSignUp(EventUserSaveDto dto) {
@@ -161,12 +177,17 @@ public class EventUserService {
         EventUser foundUser = eventUserRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new RuntimeException("회원 정보가 존재하지 않습니다."));
 
+        // 인증코드 검증 후 패스워드 등록 안한 경우 인증코드 재발송
+        if(foundUser.getPassword() == null ) {
+            generateAndSendCode(dto.getEmail(), foundUser);
+            throw new RuntimeException("비밀번호를 설정하지 않은 사용자입니다. 인증 코드를 재발송했습니다.");
+        }
+
         // 데이터 반영 (패스워드, 가입시간)
         String password = dto.getPassword();
         String encodedPassword = encoder.encode(password); // 암호화
 
         foundUser.confirm(encodedPassword);
         eventUserRepository.save(foundUser);
-
     }
 }
