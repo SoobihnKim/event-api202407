@@ -180,7 +180,7 @@ public class EventUserService {
         // 인증코드 검증 후 패스워드 등록 안한 경우 인증코드 재발송
         if(foundUser.getPassword() == null ) {
             generateAndSendCode(dto.getEmail(), foundUser);
-            throw new RuntimeException("비밀번호를 설정하지 않은 사용자입니다. 인증 코드를 재발송했습니다.");
+//            throw new RuntimeException("비밀번호를 설정하지 않은 사용자입니다. 인증 코드를 재발송했습니다.");
         }
 
         // 데이터 반영 (패스워드, 가입시간)
