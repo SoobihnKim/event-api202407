@@ -8,12 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 @Slf4j
@@ -24,50 +24,48 @@ public class TokenProvider {
     @Value("${jwt.secret}")
     private String SECRET_KEY;
 
+
     /**
      * JWT를 생성하는 메서드
      * @param eventUser - 토큰에 포함될 로그인한 유저의 정보
-     * @return - 생성된 JWT의 암호회된 문자열(보안을 위해 암호화)
+     * @return - 생성된 JWT의 암호화된 문자열
      */
     public String createToken(EventUser eventUser) {
 
         /*
-         토큰의 형태
-         {
-             "iss" : "뽀로로월드",
-             "exp" : "2024-07-18",
-             "iat" : "2024-07-15",
-             ...
-             "email" : "로그인한 회원 이메일",
-             "role" : "ADMIN"
-             ...
-             ======
-             서명
-         }
+            토큰의 형태
+            {
+                "iss": "뽀로로월드",
+                "exp": "2024-07-18",
+                "iat": "2024-07-15",
+                ...
+                "email": "로그인한 사람 이메일",
+                "role": "ADMIN"
+                ...
+                ===
+                서명
+            }
          */
 
-        // 토큰에 들어갈 커스텀 데이터(추가 클레임)
+        // 토큰에 들어갈 커스텀 데이터 (추가 클레임)
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", eventUser.getEmail());
         claims.put("role", eventUser.getRole().toString());
 
-
         return Jwts.builder()
-                // 토큰에 들어갈 서명
+                // token에 들어갈 서명
                 .signWith(
-                        Keys.hmacShaKeyFor(SECRET_KEY.getBytes()),
-                        SignatureAlgorithm.ES512
+                        Keys.hmacShaKeyFor(SECRET_KEY.getBytes())
+                        , SignatureAlgorithm.HS512
                 )
                 // payload에 들어갈 클레임 설정
                 .setClaims(claims) // 추가 클레임은 항상 가장 먼저 설정
-                .setIssuer("메롱") // 발급자 정보
+                .setIssuer("메롱메롱") // 발급자 정보
                 .setIssuedAt(new Date()) // 발급 시간
                 .setExpiration(Date.from(
-                        Instant.now().plus(1, ChronoUnit.DAYS) // 1일 뒤
+                        Instant.now().plus(1, ChronoUnit.DAYS)
                 )) // 토큰 만료 시간
-                .setSubject(eventUser.getId()) // 토큰을 식별할 수 있는 유일한 값
+                .setSubject(eventUser.getId()) // 토큰을 식별할수 있는 유일한 값
                 .compact();
-
     }
-
 }
