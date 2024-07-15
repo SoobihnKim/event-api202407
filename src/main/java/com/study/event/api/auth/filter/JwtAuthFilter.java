@@ -4,6 +4,11 @@ import com.study.event.api.auth.TokenProvider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -12,6 +17,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
 
 // 인터셉터와 비슷한 개념
 // 클라이언트가 요청에 포함한 토큰정보를 검사하는 필터
@@ -35,7 +41,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             log.info("토큰 위조 검사 필터 작동 JWT token: {}", token);
             if (token != null) {
                 // 토큰 위조 검사
-                tokenProvider.validateAndGetTokenInfo(token);
+                String userId = tokenProvider.validateAndGetTokenInfo(token);
+
+                // 인증 완료 처리
+                /*
+                  스프링 시큐리티에게 인증 완료 상황을 전달하여
+                  403 상태코드 대신 정상적인 흐름을 이어갈 수 있도록
+                 */
+                AbstractAuthenticationToken auth
+                        = new UsernamePasswordAuthenticationToken(userId,  // 인증 완료 후 컨트롤러에서 사용할 정보
+                        null, // 인증된 사용자의 패스워드 - 보통 null로 둠
+                        new ArrayList<>()); // 인가정보(권한) 리스트
+
+                // 인증 완료 시 클리이언트의 요청 정보들을 세팅
+                auth.setDetails(
+                        new WebAuthenticationDetailsSource().buildDetails(request)
+                );
+
+                // 스프링 시큐리티에게 인증이 끝났다는 사실을 전달
+                SecurityContextHolder.getContext().setAuthentication(auth);
+
             }
 
         } catch (Exception e) {
@@ -68,7 +93,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
-
         return null;
     }
 }
