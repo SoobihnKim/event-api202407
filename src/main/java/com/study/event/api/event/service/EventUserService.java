@@ -1,7 +1,9 @@
 package com.study.event.api.event.service;
 
+import com.study.event.api.auth.TokenProvider;
 import com.study.event.api.event.dto.request.EventUserSaveDto;
 import com.study.event.api.event.dto.request.LoginRequestDto;
+import com.study.event.api.event.dto.response.LoginResponseDto;
 import com.study.event.api.event.entity.EmailVerification;
 import com.study.event.api.event.entity.EventUser;
 import com.study.event.api.event.repository.EmailVerificationRepository;
@@ -12,13 +14,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.security.core.token.TokenService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.mail.internet.MimeMessage;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -37,6 +39,9 @@ public class EventUserService {
 
     // 패스워드 암호화 객체
     private final PasswordEncoder encoder;
+
+    // 토큰 생성 객체
+    private final TokenProvider tokenProvider;
 
 
     // 이메일 중복확인 처리
@@ -177,7 +182,6 @@ public class EventUserService {
         return false;
     }
 
-
     // 회원가입 마무리
     public void confirmSignUp(EventUserSaveDto dto) {
 
@@ -200,7 +204,7 @@ public class EventUserService {
     }
 
     // 회원 인증 처리(login)
-    public void authenticate(final LoginRequestDto dto) { // 전달받은 그대로 쓰게 final 붙일 수 있음
+    public LoginResponseDto authenticate(final LoginRequestDto dto) { // 전달받은 그대로 쓰게 final 붙일 수 있음
 
         // 이메일을 통해 회원 정보 조회
         EventUser eventUser = eventUserRepository.findByEmail(dto.getEmail())
@@ -219,10 +223,18 @@ public class EventUserService {
         }
 
         // 로그인 성공
-        // 인증정보를 어떻게 관리할 것인가?
+        // 인증정보를 어떻게 관리할 것인가? 세션 or 쿠키 or 토큰
+        // 인증정보(이메일, 닉네임, 프사, 토큰 정보)를 클라이언트에게 전송
         // 세션을 쓸 수 없는 이유 - 서버가 다름(리액트 거쳐서 들어옴), 서버 간 공유가 어려움
 
+        // 토큰 생성
+        String token = tokenProvider.createToken(eventUser);
 
+        return LoginResponseDto.builder()
+                .email(eventUser.getEmail())
+                .role(eventUser.getRole().toString())
+                .token(token)
+                .build();
 
     }
 
