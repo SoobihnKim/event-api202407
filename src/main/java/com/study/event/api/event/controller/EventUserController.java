@@ -1,8 +1,10 @@
 package com.study.event.api.event.controller;
 
 import com.study.event.api.event.dto.request.EventUserSaveDto;
+import com.study.event.api.event.dto.request.LoginRequestDto;
 import com.study.event.api.event.entity.EventUser;
 import com.study.event.api.event.service.EventUserService;
+import com.study.event.api.exception.LoginFailException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +50,20 @@ public class EventUserController {
         }
 
         return ResponseEntity.ok().body("saved success");
+    }
+
+    @PostMapping("/sign-in")
+    public ResponseEntity<?> signIn(@RequestBody LoginRequestDto dto) {
+
+        try { // 로그인 성공
+            eventUserService.authenticate(dto);
+            return ResponseEntity.ok().body("login success");
+        } catch (LoginFailException e) {
+            // 서비스에서 예외 발생(로그인 실패)
+            String errorMessage = e.getMessage();
+            return ResponseEntity.status(422).body(errorMessage);
+
+        }
 
     }
 
