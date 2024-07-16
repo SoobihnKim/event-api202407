@@ -6,6 +6,7 @@ import com.study.event.api.event.service.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -20,12 +21,15 @@ public class EventController {
 
     // 전체 조회 요청
     @GetMapping("/page/{pageNo}")
-    public ResponseEntity<?> getList(@RequestParam(required = false) String sort, @PathVariable int pageNo) throws InterruptedException {
+    public ResponseEntity<?> getList(@AuthenticationPrincipal String userId, // 토큰 파싱 결과로 로그인에 성공한 회원의 PK
+            @RequestParam(required = false) String sort, @PathVariable int pageNo) throws InterruptedException {
 
-        if(sort == null) {
+        log.info("token user id: {}", userId);
+
+        if (sort == null) {
             return ResponseEntity.badRequest().body("sort 파라미터가 없습니다.");
         }
-        Map<String, Object> events = eventService.getEvents(pageNo, sort);
+        Map<String, Object> events = eventService.getEvents(pageNo, sort, userId);
 
         // 의도적으로 2초 간의 로딩을 설정
         Thread.sleep(2000);
@@ -35,8 +39,10 @@ public class EventController {
 
     // 등록 요청
     @PostMapping
-    public ResponseEntity<?> register(@RequestBody EventSaveDto dto) {
-        eventService.saveEvent(dto);
+    public ResponseEntity<?> register( // JwtAuthFilter에서 시큐리티에 등록한 데이터
+            @AuthenticationPrincipal String userId,
+            @RequestBody EventSaveDto dto) {
+        eventService.saveEvent(dto, userId);
         return ResponseEntity.ok().body("event saved");
     }
 
@@ -44,7 +50,7 @@ public class EventController {
     @GetMapping("/{eventId}")
     public ResponseEntity<?> getEvent(@PathVariable Long eventId) {
 
-        if(eventId == null || eventId < 1) {
+        if (eventId == null || eventId < 1) {
             String errorMessage = "eventId가 정확하지 않습니다.";
             log.warn(errorMessage);
             return ResponseEntity.badRequest().body(errorMessage);

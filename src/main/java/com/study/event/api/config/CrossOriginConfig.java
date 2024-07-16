@@ -20,7 +20,7 @@ public class CrossOriginConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
 
         registry
-                .addMapping("/auth/**") // 어떤 url 요청에서
+                .addMapping("/**") // 어떤 url 요청에서
                 .allowedOrigins(urls) // 어떤 클라이언트를
                 .allowedMethods("*") // 어떤 방식에서
                 .allowedHeaders("*") // 어떤 헤더를 허용할지
