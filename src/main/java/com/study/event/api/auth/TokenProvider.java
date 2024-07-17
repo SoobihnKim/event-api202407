@@ -94,15 +94,14 @@ public class TokenProvider {
 
         log.info("claims: {}", claims);
 
-        // 토큰에 인증된 회원의 PK
-//        return claims.getSubject();
         // 토큰에 인증된 회원의 PK, email, 권한
         return TokenUserInfo.builder()
                 .userId(claims.getSubject())
-                .email(claims.get("email", String.class)) // 캐스팅 필요
+                .email(claims.get("email", String.class))
                 .role(Role.valueOf(claims.get("role", String.class)))
                 .build();
     }
+
 
     @Getter @ToString
     @EqualsAndHashCode
