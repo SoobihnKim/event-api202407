@@ -29,7 +29,6 @@ public class TokenProvider {
 
     /**
      * JWT를 생성하는 메서드
-     *
      * @param eventUser - 토큰에 포함될 로그인한 유저의 정보
      * @return - 생성된 JWT의 암호화된 문자열
      */
@@ -55,6 +54,7 @@ public class TokenProvider {
         claims.put("email", eventUser.getEmail());
         claims.put("role", eventUser.getRole().toString());
 
+
         return Jwts.builder()
                 // token에 들어갈 서명
                 .signWith(
@@ -77,7 +77,7 @@ public class TokenProvider {
      * 그리고 토큰을 JSON으로 파싱하여 안에 들어있는 클레임(토큰 정보)을 리턴
      *
      * @param token - 클라이언트가 보낸 토큰
-     * @return - 토큰에 들어있는 인증 정보들을 리턴 - 회원 식별 ID, email, 권한
+     * @return - 토큰에 들어있는 인증 정보들을 리턴 - 회원 식별 ID, 이메일, 권한정보
      */
     public TokenUserInfo validateAndGetTokenInfo(String token) {
 
@@ -113,7 +113,6 @@ public class TokenProvider {
         private String userId;
         private String email;
         private Role role;
-
     }
 
 }

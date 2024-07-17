@@ -57,6 +57,7 @@ public class SecurityConfig {
                 // /events/** -> 뒤에 여러개
                 .antMatchers(HttpMethod.DELETE, "/events/*").hasAnyAuthority("ADMIN")
 
+                .antMatchers(HttpMethod.PUT, "/auth/promote").hasAuthority("COMMON")
                 // 아래의 URL 요청은 로그인 없이 모두 허용
                 .antMatchers("/", "/auth/**").permitAll() // 로그인이나 회원가입은 인증안받아도 들어올 수 있게
 //                .antMatchers(HttpMethod.POST,"/events/**").permitAll()

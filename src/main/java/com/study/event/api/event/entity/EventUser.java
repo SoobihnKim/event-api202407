@@ -31,6 +31,7 @@ public class EventUser {
     @Column(length = 500)
     private String password;
 
+//    @Setter
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -52,5 +53,9 @@ public class EventUser {
     public void confirm(String password) {
         this.password = password;
         this.createAt = LocalDateTime.now();
+    }
+
+    public void promoteToPremium() {
+        this.role = Role.PREMIUM;
     }
 }
