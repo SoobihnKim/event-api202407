@@ -1,10 +1,12 @@
 package com.study.event.api.auth;
 
 import com.study.event.api.event.entity.EventUser;
+import com.study.event.api.event.entity.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -14,7 +16,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @Component
 @Slf4j
@@ -76,9 +77,9 @@ public class TokenProvider {
      * 그리고 토큰을 JSON으로 파싱하여 안에 들어있는 클레임(토큰 정보)을 리턴
      *
      * @param token - 클라이언트가 보낸 토큰
-     * @return - 토큰에 들어있는 인증 정보들을 리턴 - 회원 식별 ID
+     * @return - 토큰에 들어있는 인증 정보들을 리턴 - 회원 식별 ID, email, 권한
      */
-    public String validateAndGetTokenInfo(String token) {
+    public TokenUserInfo validateAndGetTokenInfo(String token) {
 
         Claims claims = Jwts.parserBuilder()
                 // 토큰 발급자의 발급 당시 서명을 넣음
@@ -94,7 +95,26 @@ public class TokenProvider {
         log.info("claims: {}", claims);
 
         // 토큰에 인증된 회원의 PK
-        return claims.getSubject();
+//        return claims.getSubject();
+        // 토큰에 인증된 회원의 PK, email, 권한
+        return TokenUserInfo.builder()
+                .userId(claims.getSubject())
+                .email(claims.get("email", String.class)) // 캐스팅 필요
+                .role(Role.valueOf(claims.get("role", String.class)))
+                .build();
+    }
+
+    @Getter @ToString
+    @EqualsAndHashCode
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class TokenUserInfo {
+
+        private String userId;
+        private String email;
+        private Role role;
 
     }
+
 }
