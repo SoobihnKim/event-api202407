@@ -64,7 +64,6 @@ public class EventController {
             log.warn(errorMessage);
             return ResponseEntity.badRequest().body(errorMessage);
         }
-
         EventOneDto eventDetail = eventService.getEventDetail(eventId);
         return ResponseEntity.ok().body(eventDetail);
     }
