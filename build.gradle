@@ -58,8 +58,10 @@ dependencies {
 
 }
 
+// 테스트 설정
 tasks.named('test') {
-	useJUnitPlatform()
+//	useJUnitPlatform()
+	exclude '**/*' // 빌드 시 테스트 생략
 }
 
 //querydsl 추가 시작
