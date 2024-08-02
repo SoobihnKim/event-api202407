@@ -8,7 +8,7 @@ public class HomeController {
 
     @GetMapping("/")
     public String home() {
-        return "메롱";
+        return "자동 배포 확인";
     }
 
 }
