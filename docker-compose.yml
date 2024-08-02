@@ -1,0 +1,22 @@
+services:
+  app: # 이미지 빌드할 때 이 이름으로 빌드됨
+    build: . # 이미지 빌드 자동실행(Dockerfile(도커파일) 있어야함)
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+    environment:
+      SPRING_PROFILES_ACTIVE: 'docker'
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/spring7
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: abc1234
+
+  db:
+    image: mariadb:10 # 도커 허브에서 가져옴
+    environment:
+      MYSQL_ROOT_PASSWORD: abc1234
+      MYSQL_DATABASE: spring7
+    volumes:
+      - db-data:/var/lib/mysql
+volumes:
+  db-data:
